@@ -1,0 +1,9 @@
+[submodule "infra/orchestrator"]
+	path = infra/orchestrator
+	url = https://github.com/farahorfaly04/lab-orchestrator.git
+[submodule "device-agent"]
+	path = device-agent
+	url = https://github.com/farahorfaly04/lab-agent.git
+[submodule "features"]
+	path = features
+	url = https://github.com/farahorfaly04/lab-features.git
