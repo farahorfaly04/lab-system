@@ -1,0 +1,93 @@
+services:
+  emqx:
+    image: emqx/emqx:5.8
+    container_name: lab-emqx
+    restart: unless-stopped
+    environment:
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: ${EMQX_DASHBOARD__DEFAULT_PASSWORD:-public}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${EMQX_MQTT_PORT:-1883}:1883"        # MQTT
+      - "${EMQX_MQTT_TLS_PORT:-8883}:8883"    # MQTT TLS
+      - "${EMQX_DASHBOARD_PORT:-18083}:18083" # Dashboard
+    networks: [labnet]
+    volumes:
+      - emqx_data:/opt/emqx/data
+      - emqx_log:/opt/emqx/log
+    healthcheck:
+      test: ["CMD", "emqx", "ctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    stop_grace_period: 30s
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db:
+    image: postgres:16-alpine
+    container_name: lab-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-labdb}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks: [labnet]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-labdb} -q"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  orchestrator:
+    build:
+      context: ./orchestrator
+      dockerfile: Dockerfile
+    container_name: lab-orchestrator
+    restart: unless-stopped
+    environment:
+      MQTT_HOST: emqx
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${MQTT_USERNAME:-mqtt}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-public}
+      HOST: 0.0.0.0
+      PORT: 8000
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${ORCHESTRATOR_PORT:-8000}:8000"
+    networks: [labnet]
+    depends_on:
+      emqx:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+    volumes:
+      - ../features:/app/features:ro  # Mount features as read-only
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/registry"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  labnet:
+    driver: bridge
+
+volumes:
+  emqx_data:
+  emqx_log:
+  pg_data:
