@@ -53,3 +53,12 @@ config.yaml
 # Temporary files
 tmp/
 temp/
+
+# Cursor
+.cursor/
+
+# Cursor rules
+.cursor/rules/
+
+# Virtual environment
+.venv/
