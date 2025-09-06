@@ -1,152 +1,180 @@
 # Lab Platform
 
-A modular, distributed platform for managing laboratory devices and workflows. The platform provides a clean separation between infrastructure, device agents, and pluggable features.
+A simplified, modular platform for managing laboratory devices and workflows. The platform provides clean separation between infrastructure, device agents, and pluggable features with comprehensive readiness checking.
 
-## Architecture Overview
-
-```
-lab_platform/                    # Main umbrella repository
-├── infra/                      # Infrastructure components
-│   ├── docker-compose.yaml    # EMQX, Postgres, Orchestrator
-│   └── orchestrator/           # Central coordination service
-├── device-agent/               # Edge device communication
-├── features/                   # Pluggable modules and plugins
-│   ├── modules/               # Device-side modules (e.g., NDI)
-│   └── plugins/               # Orchestrator-side plugins
-└── env.example                # Environment configuration template
-```
-
-## Components
-
-### 1. Infrastructure (`infra/`)
-
-The infrastructure layer runs as a server stack and includes:
-
-- **EMQX**: MQTT broker for device communication
-- **PostgreSQL**: Database for persistent storage
-- **Orchestrator**: Central coordination service with web UI and API
-
-The orchestrator is a FastAPI application that:
-- Manages device registry and status
-- Provides plugin system for extensible functionality
-- Offers web UI for monitoring and control
-- Handles resource locking and scheduling
-
-### 2. Device Agent (`device-agent/`)
-
-The device agent runs on edge devices (like Raspberry Pi) and:
-- Connects to the MQTT broker
-- Loads modules dynamically from `features/`
-- Publishes device metadata and status
-- Handles commands from the orchestrator
-- Manages module lifecycle and configuration
-
-### 3. Features (`features/`)
-
-Features are the pluggable components that extend the platform:
-
-- **Modules** (`features/modules/`): Run on device agents
-- **Plugins** (`features/plugins/`): Run on the orchestrator
-
-Each feature has a manifest file describing its capabilities and configuration.
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
-
 - Docker and Docker Compose
-- Python 3.9+ (for development)
+- Python 3.8+ (for development)
 
-### Quick Start
+### 1. Start Infrastructure
+```bash
+git clone <repository-url>
+cd lab_platform
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository-url>
-   cd lab_platform
-   ```
+# Configure environment
+cp env.example .env
+# Edit .env with your settings
 
-2. **Configure environment**:
-   ```bash
-   cp env.example .env
-   # Edit .env with your configuration
-   ```
+# Start services
+make start
 
-3. **Start infrastructure**:
-   ```bash
-   cd infra
-   docker-compose up -d
-   ```
+# Check readiness and auto-install dependencies
+make check-readiness
+```
 
-4. **Access the web UI**:
-   - Orchestrator: http://localhost:8000
-   - EMQX Dashboard: http://localhost:18083 (admin/public)
+### 2. Access Services
+- **Orchestrator Web UI**: http://localhost:8000
+- **EMQX Dashboard**: http://localhost:18083 (admin/public)
 
-### Setting up a Device Agent
+### 3. Setup Device Agent
+```bash
+cd device-agent
+make install
+make setup-config
+# Edit .env and config.yaml
+make run
+```
 
-1. **Install the device agent**:
-   ```bash
-   cd device-agent
-   pip install -e .
-   ```
-
-2. **Configure the agent**:
-   ```bash
-   cp config.yaml.example config.yaml
-   # Edit config.yaml with your device settings
-   ```
-
-3. **Run the agent**:
-   ```bash
-   lab-agent
-   ```
-
-## Development
-
-### Project Structure
+## 🏗️ Architecture
 
 ```
 lab_platform/
-├── infra/orchestrator/
-│   ├── src/lab_orchestrator/     # Python package
-│   │   ├── host.py              # Main FastAPI application
-│   │   ├── plugin_api.py        # Plugin interface
-│   │   └── services/            # Core services
-│   ├── pyproject.toml           # Package configuration
-│   └── Dockerfile               # Container image
-├── device-agent/
-│   ├── src/lab_agent/           # Python package
-│   │   ├── agent.py             # Main agent implementation
-│   │   ├── base.py              # Module base class
-│   │   └── common.py            # Shared utilities
-│   └── pyproject.toml           # Package configuration
-└── features/
-    ├── modules/ndi/             # NDI device module
-    │   ├── manifest.yaml        # Module metadata
-    │   └── ndi_module.py        # Module implementation
-    └── plugins/ndi/             # NDI orchestrator plugin
-        ├── manifest.yaml        # Plugin metadata
-        └── ndi_plugin.py        # Plugin implementation
+├── infra/                      # Infrastructure services
+│   ├── orchestrator/           # Central coordination service
+│   └── docker-compose.yaml    # Full stack (EMQX, DB, Orchestrator)
+├── device-agent/               # Edge device communication
+├── features/                   # Pluggable functionality
+│   ├── modules/               # Device-side modules
+│   └── plugins/               # Orchestrator-side plugins
+├── shared/                    # Shared utilities
+└── docs/                      # Comprehensive documentation
 ```
+
+## 🔧 Components
+
+### Infrastructure (`infra/`)
+- **Orchestrator**: FastAPI service with web UI and REST API
+- **EMQX**: MQTT broker for device communication  
+- **PostgreSQL**: Database for persistent storage
+- **Docker Compose**: Complete stack orchestration
+
+### Device Agent (`device-agent/`)
+- **Edge Runtime**: Runs on Raspberry Pi, lab computers, IoT devices
+- **Dynamic Module Loading**: Automatically discovers and loads features
+- **MQTT Communication**: Connects to orchestrator via MQTT
+- **Process Management**: Handles external processes and services
+
+### Features (`features/`)
+- **Modules**: Device-side functionality (NDI, Projector, etc.)
+- **Plugins**: Orchestrator-side web UI and API extensions
+- **Manifest-Driven**: Self-describing with validation
+
+### Shared Utilities (`shared/`)
+- **Readiness Checks**: Comprehensive system validation
+- **Common Libraries**: Shared code across components
+
+## 📊 Current Features
+
+### NDI (Network Device Interface)
+- **Module**: Video streaming control, recording, source switching
+- **Plugin**: Web UI for NDI device management, source discovery
+- **API**: REST endpoints for programmatic control
+
+### Projector Control  
+- **Module**: Serial communication, power/input control, adjustments
+- **Plugin**: Web interface for projector management
+- **Commands**: Navigation, keystone correction, image shifting
+
+## 🛠️ Development
 
 ### Adding New Features
 
-#### Creating a Device Module
+#### 1. Create a Module (Device-side)
+```bash
+mkdir -p features/modules/my_module
+cd features/modules/my_module
 
-1. Create directory: `features/modules/your_module/`
-2. Add `manifest.yaml` with module metadata
-3. Implement module class extending `lab_agent.base.Module`
-4. The agent will load it automatically
+# Create manifest.yaml
+cat > manifest.yaml << EOF
+name: my_module
+version: 1.0.0
+module_file: my_module.py
+class_name: MyModule
+actions:
+  - name: start
+    description: Start the module
+EOF
 
-#### Creating an Orchestrator Plugin
+# Implement module
+cat > my_module.py << 'EOF'
+from lab_agent.base import Module
 
-1. Create directory: `features/plugins/your_plugin/`
-2. Add `manifest.yaml` with plugin metadata
-3. Implement plugin class extending `lab_orchestrator.plugin_api.OrchestratorPlugin`
-4. The orchestrator will load it automatically
+class MyModule(Module):
+    name = "my_module"
+    
+    def handle_cmd(self, action: str, params: dict) -> tuple[bool, str | None, dict]:
+        if action == "start":
+            return True, None, {"status": "started"}
+        return False, f"Unknown action: {action}", {}
+EOF
 
-### MQTT Topics
+# Create readiness check
+python3 ../../shared/create_module_readiness.py my_module
+```
 
-The platform uses a structured MQTT topic hierarchy:
+#### 2. Create a Plugin (Orchestrator-side)
+```bash
+mkdir -p features/plugins/my_plugin
+cd features/plugins/my_plugin
+
+# Create manifest.yaml
+cat > manifest.yaml << EOF
+name: my_plugin
+version: 1.0.0
+plugin_class: my_plugin:MyPlugin
+EOF
+
+# Implement plugin
+cat > my_plugin.py << 'EOF'
+from lab_orchestrator.plugin_api import OrchestratorPlugin
+
+class MyPlugin(OrchestratorPlugin):
+    module_name = "my_module"
+    
+    def mqtt_topic_filters(self):
+        return [f"/lab/orchestrator/{self.module_name}/cmd"]
+    
+    def handle_mqtt(self, topic: str, payload: dict) -> None:
+        # Handle MQTT messages
+        pass
+EOF
+
+# Create readiness check
+python3 ../../shared/create_plugin_readiness.py my_plugin
+```
+
+### Testing and Validation
+
+```bash
+# Check system readiness
+make check-readiness
+
+# Test specific components
+cd device-agent && make check-readiness
+cd infra/orchestrator && make check-readiness
+
+# Run with verbose output
+make check-readiness-verbose
+
+# Get JSON status
+make check-readiness-json
+```
+
+## 🌐 MQTT Protocol
+
+Structured topic hierarchy for reliable communication:
 
 ```
 /lab/
@@ -157,130 +185,107 @@ The platform uses a structured MQTT topic hierarchy:
 │   ├── evt                     # Device events
 │   └── {module}/
 │       ├── cmd                 # Module commands
-│       ├── cfg                 # Module configuration
+│       ├── cfg                 # Module configuration  
 │       ├── status              # Module status (retained)
 │       └── evt                 # Module events
-├── orchestrator/
-│   ├── registry                # Device registry (retained)
-│   └── {module}/
-│       ├── cmd                 # Plugin commands
-│       └── evt                 # Plugin events
+└── orchestrator/
+    ├── registry                # Device registry (retained)
+    └── {module}/
+        ├── cmd                 # Plugin commands
+        └── evt                 # Plugin events
 ```
 
-## Example: NDI Feature
+## 📚 Documentation
 
-The platform includes an NDI (Network Device Interface) feature as an example:
+Comprehensive documentation is available in the `docs/` directory:
 
-- **Module** (`features/modules/ndi/`): Manages NDI viewers and recording on devices
-- **Plugin** (`features/plugins/ndi/`): Provides web UI and API for NDI control
+- **[Architecture Guide](docs/architecture.md)** - Detailed system design
+- **[Deployment Guide](docs/deployment.md)** - Production deployment
+- **[Developer Guide](docs/development.md)** - Development workflows
+- **[API Reference](docs/api.md)** - Complete API documentation
+- **[MQTT Protocol](docs/mqtt.md)** - Message formats and topics
+- **[Feature Development](docs/features.md)** - Creating modules and plugins
+- **[Troubleshooting](docs/troubleshooting.md)** - Common issues and solutions
 
-### NDI Module Capabilities
+### Component Documentation
 
-- Start/stop NDI viewers
-- Change input sources
-- Record NDI streams
-- Process and environment management
+- **[Device Agent](device-agent/README.md)** - Edge device communication
+- **[Orchestrator](infra/orchestrator/README.md)** - Central coordination service
+- **[Features](features/README.md)** - Pluggable modules and plugins
 
-### NDI Plugin Features
+## ⚡ Key Improvements
 
-- Web UI for device control
-- REST API endpoints
-- Device reservation system
-- Command scheduling
-- Dynamic source discovery
+### Simplified Architecture
+- **Reduced Complexity**: Streamlined codebase with clear separation of concerns
+- **Shared Libraries**: Common functionality in reusable components
+- **Consistent Patterns**: Unified approach across all components
 
-## Configuration
+### Comprehensive Readiness Checks
+- **System Validation**: Verify configuration, dependencies, and connectivity
+- **Component Health**: Individual and aggregate status reporting
+- **Development Aid**: Quick identification of setup issues
 
-### Environment Variables
+### Enhanced Developer Experience
+- **Clear Documentation**: Step-by-step guides for all scenarios
+- **Template Generation**: Automated scaffolding for new features
+- **Consistent APIs**: Uniform interfaces across components
 
-See `env.example` for all available configuration options:
+## 🔍 Monitoring
 
-- **MQTT Settings**: Broker connection and credentials
-- **Database Settings**: PostgreSQL configuration
-- **Service Ports**: Exposed port mappings
-- **Security Settings**: Passwords and tokens
+### Health Checks
+```bash
+# Overall system health
+make health-check
 
-### Device Agent Configuration
-
-The device agent uses `config.yaml`:
-
-```yaml
-device_id: "lab-device-01"
-labels: ["example", "lab"]
-mqtt:
-  host: "localhost"
-  port: 1883
-  username: "mqtt"
-  password: "public"
-heartbeat_interval_s: 10
-modules: {}  # Loaded dynamically from features/
+# Individual components
+curl http://localhost:8000/health
+curl http://localhost:18083  # EMQX
 ```
 
-## API Reference
+### Logging
+- **Structured Logs**: JSON format with consistent fields
+- **Component Isolation**: Separate logs per service
+- **Debug Mode**: Detailed logging for troubleshooting
 
-### Orchestrator API
+### Metrics
+- **System Metrics**: CPU, memory, disk usage
+- **Application Metrics**: Request counts, response times
+- **MQTT Metrics**: Message throughput, connection counts
 
-- `GET /api/registry` - Get device registry
-- `DELETE /api/registry/devices/{device_id}` - Remove device
-- `GET /api/{module}/*` - Module-specific endpoints
+## 🚨 Troubleshooting
 
-### Web UI
+### Quick Diagnostics
+```bash
+# Check all components
+make check-readiness-verbose
 
-- `/` - Main dashboard
-- `/ui/devices` - Device management
-- `/ui/{module}` - Module-specific UIs
-
-## Monitoring and Logging
-
-- **EMQX Dashboard**: Monitor MQTT traffic and connections
-- **Application Logs**: Structured logging from all components
-- **Health Checks**: Built-in health monitoring for all services
-
-## Security Considerations
-
-- MQTT authentication and authorization
-- Network isolation using Docker networks
-- Resource locking to prevent conflicts
-- Input validation and sanitization
-
-## Troubleshooting
+# Check specific issues
+cd device-agent && python3 scripts/check_readiness.py --verbose
+cd infra/orchestrator && python3 scripts/check_readiness.py --verbose
+```
 
 ### Common Issues
+1. **MQTT Connection Failed**: Check broker status and credentials
+2. **Module Not Loading**: Verify manifest.yaml and Python imports
+3. **Plugin Registration Failed**: Check orchestrator logs and plugin syntax
+4. **Database Connection**: Verify DATABASE_URL and service health
 
-1. **Device not appearing in registry**:
-   - Check MQTT connection
-   - Verify topic structure
-   - Check device agent logs
+See **[Troubleshooting Guide](docs/troubleshooting.md)** for detailed solutions.
 
-2. **Plugin not loading**:
-   - Verify manifest.yaml syntax
-   - Check Python import paths
-   - Review orchestrator logs
-
-3. **Connection issues**:
-   - Verify network connectivity
-   - Check firewall settings
-   - Confirm service health
-
-### Debug Mode
-
-Enable debug logging by setting environment variables:
-```bash
-export LOG_LEVEL=DEBUG
-```
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create feature branch: `git checkout -b feature/amazing-feature`
+3. Make changes with tests
+4. Run readiness checks: `make check-readiness`
+5. Submit pull request
 
-## License
+## 📄 License
 
 [Your License Here]
 
-## Support
+## 📞 Support
 
-For questions and support, please [open an issue](link-to-issues) or contact the development team.
+- **Documentation**: See `docs/` directory
+- **Issues**: [GitHub Issues](link-to-issues)
+- **Discussions**: [GitHub Discussions](link-to-discussions)

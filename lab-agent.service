@@ -1,0 +1,23 @@
+[Unit]
+Description=Lab Platform Device Agent
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/lab_platform/device-agent
+Environment="DEVICE_ID=rpi-lab-01"
+Environment="DEVICE_LABELS=lab,rpi,ndi,projector"
+Environment="MQTT_HOST=192.168.1.63"
+Environment="MQTT_PORT=1883"
+Environment="MQTT_USERNAME=tasmota"
+Environment="MQTT_PASSWORD=1234"
+Environment="HEARTBEAT_INTERVAL_S=10"
+Environment="FEATURES_PATH=/home/pi/lab_platform/features"
+Environment="LOG_LEVEL=INFO"
+ExecStart=/home/pi/lab_platform/venv/bin/python -m lab_agent.agent
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

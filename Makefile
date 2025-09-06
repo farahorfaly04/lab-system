@@ -49,3 +49,39 @@ health-check: ## Check health of all services
 	@echo "Checking service health..."
 	@curl -s http://localhost:8000/api/registry > /dev/null && echo "✓ Orchestrator healthy" || echo "✗ Orchestrator unhealthy"
 	@curl -s http://localhost:18083 > /dev/null && echo "✓ EMQX healthy" || echo "✗ EMQX unhealthy"
+
+check-readiness: ## Check readiness of all components
+	@echo "Checking Lab Platform readiness..."
+	@echo "==================================="
+	@echo "Device Agent:"
+	@cd device-agent && make check-readiness || true
+	@echo ""
+	@echo "Orchestrator:"
+	@cd infra/orchestrator && make check-readiness || true
+	@echo ""
+	@echo "NDI Plugin:"
+	@cd features/plugins/ndi && python3 check_readiness.py || true
+	@echo ""
+	@echo "Projector Plugin:"
+	@cd features/plugins/projector && python3 check_readiness.py || true
+	@echo ""
+	@echo "NDI Module:"
+	@cd features/modules/ndi && python3 check_readiness.py || true
+	@echo ""
+	@echo "Projector Module:"
+	@cd features/modules/projector && python3 check_readiness.py || true
+
+check-readiness-json: ## Check readiness with JSON output
+	@echo '{"components": {'
+	@echo -n '"device_agent": '; cd device-agent && python3 scripts/check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo ','
+	@echo -n '"orchestrator": '; cd infra/orchestrator && python3 scripts/check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo ','
+	@echo -n '"ndi_plugin": '; cd features/plugins/ndi && python3 check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo ','
+	@echo -n '"projector_plugin": '; cd features/plugins/projector && python3 check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo ','
+	@echo -n '"ndi_module": '; cd features/modules/ndi && python3 check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo ','
+	@echo -n '"projector_module": '; cd features/modules/projector && python3 check_readiness.py --json 2>/dev/null || echo '{"overall_status": "ERROR"}'
+	@echo '}}'
